@@ -1,24 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>🐓 Rooster Crow Counter</title>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/audio@0.8/dist/teachablemachine-audio.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-    h1 { font-size: 2.5em; }
-    p { font-size: 1.2em; }
-    #count { font-size: 2em; color: darkgreen; }
-    #confidence { font-size: 1.2em; color: darkblue; }
-    #error { color: red; margin-top: 20px; }
-    button { padding: 10px 20px; font-size: 1.2em; margin-top: 20px; cursor: pointer; }
+    h1 { font-size: 28px; }
+    #count { font-size: 30px; color: green; }
+    button { padding: 10px 20px; font-size: 16px; margin-top: 20px; }
+    #error { color: red; margin-top: 15px; }
   </style>
-
-  <!-- ✅ Correct Teachable Machine Audio library -->
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/audio@0.8/dist/teachablemachine-audio.min.js"></script>
 </head>
 <body>
   <h1>🐓 Rooster Crow Counter</h1>
-  <p>Status: <span id="status">Click Start to begin...</span></p>
+  <p id="status">Status: Click Start to begin...</p>
   <p>Detected Class: <span id="label">None</span></p>
   <p>Confidence: <span id="confidence">0%</span></p>
   <p>Crow Count: <span id="count">0</span></p>
@@ -27,6 +23,9 @@
 
   <script>
     const URL = "https://teachablemachine.withgoogle.com/models/SmAUlb9yZ/";
+    const modelURL = URL + "model.json";
+    const metadataURL = URL + "metadata.json";
+
     let model, recognizer;
     let count = 0;
     let lastDetectedTime = 0;
@@ -37,32 +36,30 @@
         await navigator.mediaDevices.getUserMedia({ audio: true });
         document.getElementById("status").textContent = "Loading model...";
 
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
-
         model = await tmAudio.load(modelURL, metadataURL);
         recognizer = new tmAudio.AudioRecognizer(model);
         await recognizer.open();
 
         document.getElementById("status").textContent = "Model Loaded — Listening...";
-        console.log("Model loaded, now listening...");
 
         recognizer.listen((result) => {
-          const highest = result.scores.reduce((prev, score, idx) => {
-            return score > prev.score ? { score, idx } : prev;
-          }, { score: -Infinity, idx: -1 });
-
+          const highest = result.scores.reduce((prev, score, idx) =>
+            score > prev.score ? { score, idx } : prev,
+            { score: -Infinity, idx: -1 }
+          );
           const label = model.labels[highest.idx];
-          document.getElementById("label").textContent = label;
-          document.getElementById("confidence").textContent =
-            (highest.score * 100).toFixed(1) + "%";
+          const confidence = (highest.score * 100).toFixed(1);
 
-          if (label === "Cockerel") { // 🔹 Update if your label is different
+          document.getElementById("label").textContent = label;
+          document.getElementById("confidence").textContent = confidence + "%";
+
+          if (label === "Cockerel") {
             const now = Date.now();
             if (now - lastDetectedTime > 2000) {
               count++;
               lastDetectedTime = now;
               document.getElementById("count").textContent = count;
+              console.log("Crow Count:", count);
             }
           }
         });
